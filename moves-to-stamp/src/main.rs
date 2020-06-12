@@ -1,4 +1,3 @@
-use std::collections::LinkedList;
 use std::mem::{replace};
 
 fn main() {
@@ -40,62 +39,27 @@ fn do_update(stamp: &Vec<char>, target: &mut Vec<char>, start_index: usize) -> u
 }
 
 fn moves_to_stamp(stamp: String, target: String) -> Vec<i32> {
-    // println!("stamp: {}, target: {}", stamp, target);
     let m = stamp.len();
     let n = target.len();
     let mut target_vec: Vec<char> = target.chars().collect();
     let stamp_vec: Vec<char> = stamp.chars().collect();
     let mut ans: Vec<i32> = Vec::new();
-    let mut left = 0;
     let mut stars = 0;
-
-    while !can_update(&stamp_vec, &target_vec, left) && left <= n - m + 1 {
-        left += 1;
-    }
-    if left >= n - m + 1 {
-        return Vec::new();
-    }
-    ans.push(left as i32);
-    stars += do_update(&stamp_vec, &mut target_vec, left);
-
-    if stars == n {
-        ans.reverse();
-        return ans;
-    }
-    let mut right = left + m;
-    if left > 0 { left -= 1}
-    // println!("After init left: {}, right: {}, target: {:?}", left, right, target_vec);
-    while left >= 0 && right <= n {
-        if can_update(&stamp_vec, &target_vec, left) {
-            ans.push(left as i32);
-            stars += do_update(&stamp_vec, &mut target_vec, left);
-            // println!("Match at left {}, target: {:?}", left, target_vec);
-            if left > 0 { left -= 1; }
-        } else if can_update(&stamp_vec, &target_vec, right - m) {
-            ans.push((right - m) as i32);
-            stars += do_update(&stamp_vec, &mut target_vec, right - m);
-            // println!("Match at right {}, target: {:?}", right, target_vec);
-            right += 1;
-        } else {
-            // println!("Region {} - {} expanded, searching for a new one. Target: {:?}", left, right, target_vec);
-            left = 0;
-            while !can_update(&stamp_vec, &target_vec, left) && left <= n - m + 1 {
-                left += 1;
+    while stars < n {
+        let mut matched = false;
+        for i in 0..n - m + 1 {
+            if can_update(&stamp_vec, &target_vec, i) {
+                stars += do_update(&stamp_vec, &mut target_vec, i);
+                ans.push(i as i32);
+                matched = true;
             }
-            if left >= n - m + 1 {
-                return Vec::new();
-            }
-            stars += do_update(&stamp_vec, &mut target_vec, left);
-            ans.push(left as i32);
-            right = left + m;
-            if left > 0 { left -= 1}
         }
-
-        // println!("Left {}, right {}", left, right);
-
         if stars == n {
             ans.reverse();
             return ans;
+        }
+        if !matched {
+            return Vec::new();
         }
     }
     Vec::new()
