@@ -1,10 +1,15 @@
+use std::collections::{VecDeque};
+use std::mem::replace;
+
 fn main() {
-    println!("Hello, world!");
+    println!("{}", cat_mouse_game(vec![vec![2, 5], vec![3], vec![0, 4, 5], vec![1, 4, 5], vec![2, 3], vec![0, 2, 3]]));
+    println!("{}", cat_mouse_game(vec![vec![1,3],vec![0],vec![3],vec![0,2]]));
+    // println!("{}", cat_mouse_game(vec![vec![2,3],vec![3,4],vec![0,4],vec![0,1],vec![1,2]]));
+    // println!("{}", cat_mouse_game(vec![vec![6], vec![4], vec![9], vec![5], vec![1, 5], vec![3, 4, 6], vec![0, 5, 10], vec![8, 9, 10], vec![7], vec![2, 7], vec![6, 7]]));
 }
 
 
-impl Solution {
-    /**
+/**
 A game on an undirected graph is played by two players, Mouse and Cat, who alternate turns.
 
 The graph is given as follows: graph[a] is a list of all nodes b such that ab is an edge of the graph.
@@ -31,8 +36,8 @@ Explanation:
 4---3---1
 |   |
 2---5
- \ /
-  0
+\ /
+0
 
 
 Note:
@@ -41,14 +46,70 @@ Note:
 It is guaranteed that graph[1] is non-empty.
 It is guaranteed that graph[2] contains a non-zero element.
 */
-    pub fn cat_mouse_game(graph: Vec<Vec<i32>>) -> i32 {}
+pub fn cat_mouse_game(graph: Vec<Vec<i32>>) -> i32 {
+    let n = graph.len();
+    let mut color: Vec<Vec<Vec<usize>>> = vec![vec![vec![0;2];n];n];
+    let mut degree: Vec<Vec<Vec<usize>>> = vec![vec![vec![0;2];n];n];
+    const CAT_TURN: usize = 1;
+    const MOUSE_TURN: usize = 0;
+    const CAT_WINS: usize = 2;
+    const MOUSE_WINS: usize = 1;
 
+    for i in 0..n {
+        for j in 0..n {
+            replace(&mut degree[i][j][MOUSE_TURN], graph[j].len());
+            replace(&mut degree[i][j][CAT_TURN], graph[i].len());
+            for k in &graph[i] {
+                if *k == 0 {
+                    let len = degree[i][j][CAT_TURN];
+                    replace(&mut degree[i][j][CAT_TURN], len - 1);
+                    break;
+                }
+            }
+        }
+    };
 
-}
+    let mut q: VecDeque<(usize, usize, usize, usize)> = VecDeque::new();
 
-struct Node {
-    c: i32,
-    m: i32,
-    t: bool //true = cat, false = mouse
+    for k in 0..n {
+        for m in 0..2 {
+            replace(&mut color[k][k][m], CAT_WINS);
+            q.push_back((k, k, m, CAT_WINS));
+            replace(&mut color[k][0][m], MOUSE_WINS);
+            q.push_back((k, 0, m, MOUSE_WINS));
+        }
+    }
 
+    while !q.is_empty() {
+        let tmp = q.pop_front().unwrap();
+        let prev_turn = 1 - tmp.2;
+        let parents_of = if prev_turn == CAT_TURN { tmp.0 } else { tmp.1 };
+        let prev_cat_or_mouse = if prev_turn == CAT_TURN { tmp.1 } else { tmp.0 };
+        let c = tmp.3;
+        if tmp.0 == 2 && tmp.1 == 1 && tmp.2 == MOUSE_TURN {
+            return c as i32;
+        }
+        for prev_vertex in &graph[parents_of] {
+            let prev_cat = if prev_turn == CAT_TURN { *prev_vertex as usize } else { prev_cat_or_mouse };
+            let prev_mouse = if prev_turn == CAT_TURN { prev_cat_or_mouse } else { *prev_vertex  as usize };
+            if prev_cat == 0 { continue; }
+            if color[prev_cat][prev_mouse][prev_turn] > 0 { continue; }
+            if prev_turn == 1 && c == 2 || prev_turn == 0 && c == 1 {
+                replace(&mut color[prev_cat][prev_mouse][prev_turn], c);
+                q.push_back((prev_cat, prev_mouse, prev_turn, c))
+            } else if degree[prev_cat][prev_mouse][prev_turn] == 0 {
+                replace(&mut color[prev_cat][prev_mouse][prev_turn], c);
+                q.push_back((prev_cat, prev_mouse, prev_turn, c))
+            } else {
+                let cur_degr = degree[prev_cat][prev_mouse][prev_turn];
+                replace(&mut degree[prev_cat][prev_mouse][prev_turn], cur_degr - 1);
+                if degree[prev_cat][prev_mouse][prev_turn] == 0 {
+                    replace(&mut color[prev_cat][prev_mouse][prev_turn], c);
+                    q.push_back((prev_cat, prev_mouse, prev_turn, c))
+                }
+            }
+        }
+    }
+
+    return 0;
 }

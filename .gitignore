@@ -4,5 +4,5 @@
 .idea
 /.idea
 **/*.rs.bk
-/Cargo.lock
+**/Cargo.lock
 **/*.iml
